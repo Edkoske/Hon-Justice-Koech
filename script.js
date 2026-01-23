@@ -191,3 +191,51 @@
                 successMessage.classList.add('hidden');
             }, 5000);
         });
+
+        // Lightbox / simple carousel for gallery images
+        (function(){
+            const galleryImages = Array.from(document.querySelectorAll('#gallery img'));
+            if(!galleryImages.length) return;
+
+            const lightbox = document.getElementById('lightbox');
+            const lightboxImg = document.getElementById('lightbox-img');
+            const btnClose = document.getElementById('lightbox-close');
+            const btnNext = document.getElementById('lightbox-next');
+            const btnPrev = document.getElementById('lightbox-prev');
+            let currentIndex = 0;
+
+            const srcs = galleryImages.map(img => img.getAttribute('src'));
+
+            function openAt(i){
+                currentIndex = (i + srcs.length) % srcs.length;
+                lightboxImg.src = srcs[currentIndex];
+                lightbox.classList.remove('hidden');
+                lightbox.classList.add('flex');
+            }
+
+            function close(){
+                lightbox.classList.add('hidden');
+                lightbox.classList.remove('flex');
+                lightboxImg.src = '';
+            }
+
+            galleryImages.forEach((img, idx) => {
+                img.style.cursor = 'pointer';
+                img.addEventListener('click', () => openAt(idx));
+            });
+
+            btnClose.addEventListener('click', close);
+            btnNext.addEventListener('click', () => openAt(currentIndex + 1));
+            btnPrev.addEventListener('click', () => openAt(currentIndex - 1));
+
+            lightbox.addEventListener('click', (e) => {
+                if(e.target === lightbox) close();
+            });
+
+            document.addEventListener('keydown', (e) => {
+                if(lightbox.classList.contains('hidden')) return;
+                if(e.key === 'Escape') close();
+                if(e.key === 'ArrowRight') openAt(currentIndex + 1);
+                if(e.key === 'ArrowLeft') openAt(currentIndex - 1);
+            });
+        })();
