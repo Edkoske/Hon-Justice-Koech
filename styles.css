@@ -123,6 +123,24 @@
         .w-80 img,
         .rounded-2xl img,
         .card-hover img,
-        .relative img { object-fit: cover; object-position: 50% 35%; }
+        .relative img { object-fit: cover; }
+
+        /* Section-specific framing overrides */
+        /* Hero: slightly higher subject (35% down) */
+        .hero-pattern .img-cover,
+        .hero-pattern .relative img { object-position: 50% 35%; }
+
+        /* Thumbnails / gallery: show entire image (no cropping) */
+        #gallery img.img-cover,
+        #event-thumbs img.img-cover,
+        .h-64 img.img-cover,
+        .card-hover img.img-cover {
+            object-fit: contain;
+            object-position: 50% 50%;
+            background-color: #f3f4f6;
+        }
+
+        /* Lightbox: show full image centered (contain for best visibility) */
+        #lightbox-img { object-fit: contain; object-position: 50% 50%; }
     </style>
   <style>@view-transition { navigation: auto; }</style>
