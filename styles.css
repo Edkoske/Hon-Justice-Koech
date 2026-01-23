@@ -1,0 +1,113 @@
+        body {
+            box-sizing: border-box;
+            font-family: 'Lato', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+        
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Playfair Display', Georgia, serif;
+            letter-spacing: -0.02em;
+        }
+        
+        * {
+            box-sizing: border-box;
+        }
+
+        .hero-pattern {
+            background: linear-gradient(135deg, rgba(22, 101, 52, 0.8) 0%, rgba(21, 128, 61, 0.8) 100%), url('assets/hero-bg.jpg');
+            background-size: cover;
+            background-position: center;
+            position: relative;
+        }
+
+        .hero-pattern::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at 30% 50%, rgba(234, 179, 8, 0.12) 0%, transparent 50%);
+            pointer-events: none;
+        }
+
+        .card-hover {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card-hover:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        .btn-primary {
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        .section-title {
+            position: relative;
+            display: inline-block;
+            letter-spacing: -0.02em;
+        }
+
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 3px;
+            background: linear-gradient(90deg, #EAB308, #FCD34D);
+            border-radius: 2px;
+        }
+
+        .agenda-icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fade-in {
+            animation: fadeInUp 0.8s ease-out;
+        }
+
+        .nav-sticky {
+            backdrop-filter: blur(10px);
+            background-color: rgba(255, 255, 255, 0.95);
+        }
+
+        .party-badge {
+            background: linear-gradient(135deg, #DC2626, #EF4444);
+            color: white;
+            padding: 10px 24px;
+            border-radius: 30px;
+            font-weight: 700;
+            font-size: 13px;
+            display: inline-block;
+            box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            font-family: 'Lato', sans-serif;
+        }
+    </style>
+  <style>@view-transition { navigation: auto; }</style>
