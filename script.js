@@ -249,7 +249,14 @@
                 const staticCaps = staticGallery.map(img => img.getAttribute('alt') || '');
                 staticGallery.forEach((img, idx) => {
                     img.style.cursor = 'pointer';
+                    img.tabIndex = 0;
                     img.addEventListener('click', () => window.openLightbox(staticSrcs, staticCaps, idx));
+                    img.addEventListener('keydown', (e) => {
+                        if(e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            window.openLightbox(staticSrcs, staticCaps, idx);
+                        }
+                    });
                 });
             }
         })();
@@ -296,7 +303,14 @@
                     img.src = src;
                     img.alt = cap;
                     img.loading = 'lazy';
-                    img.className = 'w-full h-48 object-cover';
+                    img.className = 'w-full h-48 object-cover img-cover';
+                    img.tabIndex = 0;
+                    img.addEventListener('keydown', (e) => {
+                        if(e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            window.openLightbox(eventImages, eventCaptions, i);
+                        }
+                    });
                     img.addEventListener('click', () => {
                         window.openLightbox(eventImages, eventCaptions, i);
                     });
