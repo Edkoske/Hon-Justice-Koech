@@ -149,6 +149,16 @@
             border-radius: 12px;
         }
 
+        /* About section: present the image fully and professionally */
+        #about img.img-cover {
+            object-fit: contain;
+            object-position: 50% 50%;
+            background-color: #ffffff;
+            padding: 0.5rem;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(2,6,23,0.06);
+        }
+
         /* Make contained images look professional with subtle padding and neutral background */
         img.img-cover {
             transition: transform 0.35s ease, box-shadow 0.35s ease;
