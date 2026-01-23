@@ -192,23 +192,23 @@
             }, 5000);
         });
 
-        // Lightbox / simple carousel for gallery images
+        // Enhanced Lightbox + API for dynamic galleries
         (function(){
-            const galleryImages = Array.from(document.querySelectorAll('#gallery img'));
-            if(!galleryImages.length) return;
-
             const lightbox = document.getElementById('lightbox');
             const lightboxImg = document.getElementById('lightbox-img');
+            const lightboxCaption = document.getElementById('lightbox-caption');
             const btnClose = document.getElementById('lightbox-close');
             const btnNext = document.getElementById('lightbox-next');
             const btnPrev = document.getElementById('lightbox-prev');
+            let srcs = [];
+            let captions = [];
             let currentIndex = 0;
 
-            const srcs = galleryImages.map(img => img.getAttribute('src'));
-
             function openAt(i){
-                currentIndex = (i + srcs.length) % srcs.length;
+                if(!srcs.length) return;
+                currentIndex = ((i % srcs.length) + srcs.length) % srcs.length;
                 lightboxImg.src = srcs[currentIndex];
+                lightboxCaption.textContent = captions[currentIndex] || '';
                 lightbox.classList.remove('hidden');
                 lightbox.classList.add('flex');
             }
@@ -217,25 +217,135 @@
                 lightbox.classList.add('hidden');
                 lightbox.classList.remove('flex');
                 lightboxImg.src = '';
+                lightboxCaption.textContent = '';
             }
 
-            galleryImages.forEach((img, idx) => {
-                img.style.cursor = 'pointer';
-                img.addEventListener('click', () => openAt(idx));
-            });
+            btnClose && btnClose.addEventListener('click', close);
+            btnNext && btnNext.addEventListener('click', () => openAt(currentIndex + 1));
+            btnPrev && btnPrev.addEventListener('click', () => openAt(currentIndex - 1));
 
-            btnClose.addEventListener('click', close);
-            btnNext.addEventListener('click', () => openAt(currentIndex + 1));
-            btnPrev.addEventListener('click', () => openAt(currentIndex - 1));
-
-            lightbox.addEventListener('click', (e) => {
+            lightbox && lightbox.addEventListener('click', (e) => {
                 if(e.target === lightbox) close();
             });
 
             document.addEventListener('keydown', (e) => {
-                if(lightbox.classList.contains('hidden')) return;
+                if(!lightbox || lightbox.classList.contains('hidden')) return;
                 if(e.key === 'Escape') close();
                 if(e.key === 'ArrowRight') openAt(currentIndex + 1);
                 if(e.key === 'ArrowLeft') openAt(currentIndex - 1);
             });
+
+            // Expose an API to open the lightbox with a custom list of images and captions
+            window.openLightbox = function(imagesArray, captionsArray, startIndex){
+                srcs = (imagesArray || []).slice();
+                captions = (captionsArray || []).slice();
+                openAt(startIndex || 0);
+            };
+
+            // Wire existing static #gallery images (if present) to the enhanced lightbox
+            const staticGallery = Array.from(document.querySelectorAll('#gallery img'));
+            if(staticGallery.length){
+                const staticSrcs = staticGallery.map(img => img.getAttribute('src'));
+                const staticCaps = staticGallery.map(img => img.getAttribute('alt') || '');
+                staticGallery.forEach((img, idx) => {
+                    img.style.cursor = 'pointer';
+                    img.addEventListener('click', () => window.openLightbox(staticSrcs, staticCaps, idx));
+                });
+            }
+        })();
+
+        // Paginated Event Gallery (auto-generate captions from filenames)
+        (function(){
+            const start = 23;
+            const end = 63; // inclusive
+            const pageSize = 12;
+            const thumbsContainer = document.getElementById('event-thumbs');
+            const paginationContainer = document.getElementById('event-pagination');
+            if(!thumbsContainer || !paginationContainer) return;
+
+            // Build image list
+            const eventImages = [];
+            for(let i = start; i <= end; i++){
+                eventImages.push(`assets/event-${i}.jpg`);
+            }
+
+            function captionFromFilename(path){
+                const name = path.split('/').pop().replace(/\.[^.]+$/, '');
+                // Turn 'event-23' => 'Event 23'
+                return name.split('-').map((s, idx) => idx===0? s.charAt(0).toUpperCase()+s.slice(1) : s).join(' ').replace(/event\s+(\d+)/i, 'Event $1');
+            }
+
+            const eventCaptions = eventImages.map(captionFromFilename);
+
+            const totalPages = Math.max(1, Math.ceil(eventImages.length / pageSize));
+            let currentPage = 1;
+
+            function renderPage(page){
+                currentPage = Math.min(Math.max(1, page), totalPages);
+                thumbsContainer.innerHTML = '';
+
+                const startIndex = (currentPage - 1) * pageSize;
+                const endIndex = Math.min(eventImages.length, startIndex + pageSize);
+
+                for(let i = startIndex; i < endIndex; i++){
+                    const src = eventImages[i];
+                    const cap = eventCaptions[i];
+                    const card = document.createElement('div');
+                    card.className = 'bg-white rounded-lg overflow-hidden shadow hover:shadow-lg cursor-pointer';
+                    const img = document.createElement('img');
+                    img.src = src;
+                    img.alt = cap;
+                    img.loading = 'lazy';
+                    img.className = 'w-full h-48 object-cover';
+                    img.addEventListener('click', () => {
+                        window.openLightbox(eventImages, eventCaptions, i);
+                    });
+                    card.appendChild(img);
+                    const captionDiv = document.createElement('div');
+                    captionDiv.className = 'p-3 text-center text-sm text-gray-700';
+                    captionDiv.textContent = cap;
+                    card.appendChild(captionDiv);
+                    thumbsContainer.appendChild(card);
+                }
+
+                renderPagination();
+            }
+
+            function renderPagination(){
+                paginationContainer.innerHTML = '';
+
+                const prev = document.createElement('button');
+                prev.className = 'px-4 py-2 bg-gray-200 rounded disabled:opacity-50';
+                prev.textContent = 'Prev';
+                prev.disabled = currentPage === 1;
+                prev.addEventListener('click', () => renderPage(currentPage - 1));
+                paginationContainer.appendChild(prev);
+
+                // Show up to 7 page buttons centered around current
+                const maxButtons = 7;
+                const half = Math.floor(maxButtons / 2);
+                let startBtn = Math.max(1, currentPage - half);
+                let endBtn = Math.min(totalPages, startBtn + maxButtons - 1);
+                if(endBtn - startBtn < maxButtons - 1){
+                    startBtn = Math.max(1, endBtn - maxButtons + 1);
+                }
+
+                for(let p = startBtn; p <= endBtn; p++){
+                    const btn = document.createElement('button');
+                    btn.className = `px-3 py-2 rounded ${p===currentPage? 'bg-green-700 text-white':'bg-gray-100'}`;
+                    btn.textContent = p;
+                    btn.addEventListener('click', () => renderPage(p));
+                    paginationContainer.appendChild(btn);
+                }
+
+                const next = document.createElement('button');
+                next.className = 'px-4 py-2 bg-gray-200 rounded disabled:opacity-50';
+                next.textContent = 'Next';
+                next.disabled = currentPage === totalPages;
+                next.addEventListener('click', () => renderPage(currentPage + 1));
+                paginationContainer.appendChild(next);
+            }
+
+            // Initialize
+            renderPage(1);
         })();
