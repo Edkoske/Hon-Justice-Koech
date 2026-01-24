@@ -384,16 +384,42 @@
        <h3 class="text-3xl font-bold mb-6">Volunteer With Us</h3>
        <p class="text-lg mb-8 opacity-90">Be part of the movement for change. Sign up to volunteer and help us reach every corner of Soliat Ward.</p>
       <form id="volunteer-form" class="space-y-4" action="https://formspree.io/f/xjgyonqd" method="POST">
-        <div><label for="vol-name" class="block font-semibold mb-2">Full Name</label> <input type="text" id="vol-name" name="name" required class="w-full px-4 py-3 rounded-lg text-gray-900 focus:ring-2 focus:ring-yellow-400 outline-none">
+        <!-- Hidden subject for Formspree -->
+        <input type="hidden" name="_subject" value="Volunteer Sign-up - Justice Koech">
+        <!-- Honeypot to deter bots -->
+        <input type="text" name="_gotcha" style="display:none" tabindex="-1" autocomplete="off">
+
+        <div>
+          <label for="vol-name" class="block font-semibold mb-2">Full Name</label>
+          <input type="text" id="vol-name" name="name" required class="w-full px-4 py-3 rounded-lg text-gray-900 focus:ring-2 focus:ring-yellow-400 outline-none">
         </div>
-        <div><label for="vol-phone" class="block font-semibold mb-2">Phone Number</label> <input type="tel" id="vol-phone" name="phone" required class="w-full px-4 py-3 rounded-lg text-gray-900 focus:ring-2 focus:ring-yellow-400 outline-none">
+
+        <div>
+          <label for="vol-email" class="block font-semibold mb-2">Email Address</label>
+          <input type="email" id="vol-email" name="_replyto" required placeholder="you@example.com" class="w-full px-4 py-3 rounded-lg text-gray-900 focus:ring-2 focus:ring-yellow-400 outline-none">
         </div>
-        <div><label for="vol-location" class="block font-semibold mb-2">Your Village/Location</label> <input type="text" id="vol-location" name="location" required class="w-full px-4 py-3 rounded-lg text-gray-900 focus:ring-2 focus:ring-yellow-400 outline-none">
+
+        <div>
+          <label for="vol-phone" class="block font-semibold mb-2">Phone Number</label>
+          <input type="tel" id="vol-phone" name="phone" required class="w-full px-4 py-3 rounded-lg text-gray-900 focus:ring-2 focus:ring-yellow-400 outline-none">
         </div>
+
+        <div>
+          <label for="vol-location" class="block font-semibold mb-2">Your Village/Location</label>
+          <input type="text" id="vol-location" name="location" required class="w-full px-4 py-3 rounded-lg text-gray-900 focus:ring-2 focus:ring-yellow-400 outline-none">
+        </div>
+
+        <div>
+          <label for="vol-message" class="block font-semibold mb-2">Message (optional)</label>
+          <textarea id="vol-message" name="message" rows="4" class="w-full px-4 py-3 rounded-lg text-gray-900 focus:ring-2 focus:ring-yellow-400 outline-none" placeholder="Any details we should know (availability, skills, interests)"></textarea>
+        </div>
+
         <div id="volunteer-success" class="hidden bg-yellow-400 text-green-900 px-6 py-4 rounded-lg font-semibold text-center">
-         Thank you for joining our movement! We'll be in touch soon.
-        </div><button type="submit" class="btn-primary w-full bg-yellow-400 text-gray-900 font-bold py-4 px-8 rounded-lg text-lg shadow-lg hover:bg-yellow-300">Join the Team</button>
-       </form>
+          Thank you for joining our movement! We'll be in touch soon.
+        </div>
+
+        <button type="submit" class="btn-primary w-full bg-yellow-400 text-gray-900 font-bold py-4 px-8 rounded-lg text-lg shadow-lg hover:bg-yellow-300">Join the Team</button>
+      </form>
       </div>
       <div>
        <div class="bg-gray-50 rounded-2xl p-8 mb-8">
