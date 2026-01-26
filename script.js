@@ -177,59 +177,78 @@
         });
 
         // Professional Page Loader
-        window.addEventListener('load', function() {
+        (function() {
             const loader = document.getElementById('page-loader');
             const root = document.getElementById('root');
+            const loaderImage = document.querySelector('.loader-image');
             
-            // Wait for images to load
-            const images = document.querySelectorAll('img');
-            let imagesLoaded = 0;
-            const totalImages = images.length;
-            
-            if (totalImages === 0) {
-                // No images, hide loader immediately
+            // Ensure loader image loads first
+            function hideLoader() {
                 setTimeout(() => {
                     loader.classList.add('hidden');
                     root.classList.remove('content-hidden');
                     root.classList.add('content-visible');
-                }, 500);
-            } else {
-                // Track image loading
-                images.forEach(img => {
-                    if (img.complete) {
-                        imagesLoaded++;
-                    } else {
-                        img.addEventListener('load', function() {
-                            imagesLoaded++;
-                            if (imagesLoaded === totalImages) {
-                                setTimeout(() => {
-                                    loader.classList.add('hidden');
-                                    root.classList.remove('content-hidden');
-                                    root.classList.add('content-visible');
-                                }, 500);
-                            }
-                        });
-                        img.addEventListener('error', function() {
-                            imagesLoaded++;
-                            if (imagesLoaded === totalImages) {
-                                setTimeout(() => {
-                                    loader.classList.add('hidden');
-                                    root.classList.remove('content-hidden');
-                                    root.classList.add('content-visible');
-                                }, 500);
-                            }
-                        });
-                    }
-                });
-                
-                // Fallback timeout (max 3 seconds)
-                setTimeout(() => {
-                    loader.classList.add('hidden');
-                    root.classList.remove('content-hidden');
-                    root.classList.add('content-visible');
-                }, 3000);
+                }, 600);
             }
-        });
+            
+            // Preload the loader image
+            if (loaderImage) {
+                const img = new Image();
+                img.onload = function() {
+                    // Loader image loaded, now wait for page images
+                    loadPageContent();
+                };
+                img.onerror = function() {
+                    // Loader image failed, still proceed
+                    loadPageContent();
+                };
+                img.src = loaderImage.src;
+            } else {
+                loadPageContent();
+            }
+            
+            function loadPageContent() {
+                // Wait for main page images to load
+                const images = document.querySelectorAll('#root img');
+                let imagesLoaded = 0;
+                const totalImages = images.length;
+                
+                if (totalImages === 0) {
+                    // No images, hide loader after minimum display time
+                    setTimeout(hideLoader, 1000);
+                } else {
+                    // Track image loading
+                    images.forEach(img => {
+                        if (img.complete) {
+                            imagesLoaded++;
+                        } else {
+                            img.addEventListener('load', function() {
+                                imagesLoaded++;
+                                checkComplete();
+                            });
+                            img.addEventListener('error', function() {
+                                imagesLoaded++;
+                                checkComplete();
+                            });
+                        }
+                    });
+                    
+                    function checkComplete() {
+                        if (imagesLoaded === totalImages) {
+                            hideLoader();
+                        }
+                    }
+                    
+                    // Check if all already loaded
+                    if (imagesLoaded === totalImages) {
+                        setTimeout(hideLoader, 1000);
+                    }
+                    
+                    // Fallback timeout (max 4 seconds)
+                    setTimeout(hideLoader, 4000);
+                }
+            }
+        })();
 
         // Image loading states
         document.querySelectorAll('img').forEach(img => {
