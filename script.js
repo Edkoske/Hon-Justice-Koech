@@ -176,20 +176,157 @@
             document.getElementById('agenda').scrollIntoView({ behavior: 'smooth' });
         });
 
-        // Volunteer form submission
-        document.getElementById('volunteer-form').addEventListener('submit', function(e) {
+        // Professional Page Loader
+        window.addEventListener('load', function() {
+            const loader = document.getElementById('page-loader');
+            const root = document.getElementById('root');
+            
+            // Wait for images to load
+            const images = document.querySelectorAll('img');
+            let imagesLoaded = 0;
+            const totalImages = images.length;
+            
+            if (totalImages === 0) {
+                // No images, hide loader immediately
+                setTimeout(() => {
+                    loader.classList.add('hidden');
+                    root.classList.remove('content-hidden');
+                    root.classList.add('content-visible');
+                }, 500);
+            } else {
+                // Track image loading
+                images.forEach(img => {
+                    if (img.complete) {
+                        imagesLoaded++;
+                    } else {
+                        img.addEventListener('load', function() {
+                            imagesLoaded++;
+                            if (imagesLoaded === totalImages) {
+                                setTimeout(() => {
+                                    loader.classList.add('hidden');
+                                    root.classList.remove('content-hidden');
+                                    root.classList.add('content-visible');
+                                }, 500);
+                            }
+                        });
+                        img.addEventListener('error', function() {
+                            imagesLoaded++;
+                            if (imagesLoaded === totalImages) {
+                                setTimeout(() => {
+                                    loader.classList.add('hidden');
+                                    root.classList.remove('content-hidden');
+                                    root.classList.add('content-visible');
+                                }, 500);
+                            }
+                        });
+                    }
+                });
+                
+                // Fallback timeout (max 3 seconds)
+                setTimeout(() => {
+                    loader.classList.add('hidden');
+                    root.classList.remove('content-hidden');
+                    root.classList.add('content-visible');
+                }, 3000);
+            }
+        });
+
+        // Image loading states
+        document.querySelectorAll('img').forEach(img => {
+            if (!img.complete) {
+                img.classList.add('img-loading');
+                img.addEventListener('load', function() {
+                    this.classList.remove('img-loading');
+                });
+                img.addEventListener('error', function() {
+                    this.classList.remove('img-loading');
+                });
+            }
+        });
+
+        // Scroll reveal animation
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver(function(entries) {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('revealed');
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, observerOptions);
+
+        // Observe sections for scroll reveal
+        document.querySelectorAll('section').forEach(section => {
+            section.classList.add('reveal-on-scroll');
+            observer.observe(section);
+        });
+
+        // Volunteer form submission with proper error handling
+        document.getElementById('volunteer-form').addEventListener('submit', async function(e) {
             e.preventDefault();
             
-            const successMessage = document.getElementById('volunteer-success');
-            successMessage.classList.remove('hidden');
+            const form = this;
+            const submitBtn = document.getElementById('volunteer-submit-btn');
+            const messageDiv = document.getElementById('volunteer-message');
+            const formData = new FormData(form);
             
-            // Reset form
-            this.reset();
+            // Hide previous messages
+            messageDiv.classList.add('hidden');
+            messageDiv.className = 'hidden form-message';
             
-            // Hide message after 5 seconds
-            setTimeout(() => {
-                successMessage.classList.add('hidden');
-            }, 5000);
+            // Show loading state
+            submitBtn.classList.add('btn-submitting');
+            submitBtn.disabled = true;
+            form.classList.add('form-loading');
+            
+            try {
+                const response = await fetch('https://formspree.io/f/xjgyonqd', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                if (response.ok) {
+                    // Success
+                    messageDiv.className = 'form-message form-success';
+                    messageDiv.textContent = 'Thank you for joining our movement! We\'ll be in touch soon.';
+                    messageDiv.classList.remove('hidden');
+                    
+                    // Reset form
+                    form.reset();
+                    
+                    // Scroll to message
+                    messageDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    
+                    // Hide message after 8 seconds
+                    setTimeout(() => {
+                        messageDiv.classList.add('hidden');
+                    }, 8000);
+                } else {
+                    // Server error
+                    const data = await response.json();
+                    throw new Error(data.error || 'Submission failed. Please try again.');
+                }
+            } catch (error) {
+                // Network or other error
+                messageDiv.className = 'form-message form-error';
+                messageDiv.textContent = error.message || 'Something went wrong. Please check your connection and try again.';
+                messageDiv.classList.remove('hidden');
+                
+                // Scroll to message
+                messageDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            } finally {
+                // Remove loading state
+                submitBtn.classList.remove('btn-submitting');
+                submitBtn.disabled = false;
+                form.classList.remove('form-loading');
+            }
         });
 
         // Enhanced Lightbox + API for dynamic galleries
