@@ -158,12 +158,14 @@
         document.getElementById('mobile-menu-btn').addEventListener('click', function() {
             const menu = document.getElementById('mobile-menu');
             menu.classList.toggle('hidden');
+            this.setAttribute('aria-expanded', String(!menu.classList.contains('hidden')));
         });
 
         // Close mobile menu when clicking a link
         document.querySelectorAll('#mobile-menu a').forEach(link => {
             link.addEventListener('click', () => {
                 document.getElementById('mobile-menu').classList.add('hidden');
+                document.getElementById('mobile-menu-btn').setAttribute('aria-expanded', 'false');
             });
         });
 
@@ -263,26 +265,39 @@
             }
         });
 
-        // Scroll reveal animation
-        const observerOptions = {
-            threshold: 0.1,
-            rootMargin: '0px 0px -50px 0px'
-        };
+        // Scroll reveal animation, disabled for users who prefer reduced motion.
+        const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        let revealObserver = null;
 
-        const observer = new IntersectionObserver(function(entries) {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.classList.add('revealed');
-                    observer.unobserve(entry.target);
-                }
+        if ('IntersectionObserver' in window && !prefersReducedMotion) {
+            const root = document.getElementById('root');
+            revealObserver = new IntersectionObserver(function(entries) {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('revealed');
+                        revealObserver.unobserve(entry.target);
+                    }
+                });
+            }, {
+                root,
+                threshold: 0.08,
+                rootMargin: '0px 0px -32px 0px'
             });
-        }, observerOptions);
 
-        // Observe sections for scroll reveal
-        document.querySelectorAll('section').forEach(section => {
-            section.classList.add('reveal-on-scroll');
-            observer.observe(section);
-        });
+            const staggerTargets = document.querySelectorAll(
+                '.card-hover, #gallery .grid > div, #contact .grid > div, #ward .bg-gray-50 .text-center'
+            );
+            staggerTargets.forEach((target, index) => {
+                target.style.setProperty('--reveal-delay', `${(index % 4) * 75}ms`);
+            });
+
+            document.querySelectorAll('section, .card-hover, #gallery .grid > div, #contact .grid > div, #ward .bg-gray-50 .text-center').forEach(target => {
+                target.classList.add('reveal-on-scroll');
+                revealObserver.observe(target);
+            });
+
+            root.classList.add('motion-enabled');
+        }
 
         // Volunteer form submission with proper error handling
         document.getElementById('volunteer-form').addEventListener('submit', async function(e) {
@@ -328,9 +343,9 @@
                         messageDiv.classList.add('hidden');
                     }, 8000);
                 } else {
-                    // Server error
-                    const data = await response.json();
-                    throw new Error(data.error || 'Submission failed. Please try again.');
+                    const contentType = response.headers.get('content-type') || '';
+                    const data = contentType.includes('application/json') ? await response.json() : null;
+                    throw new Error((data && data.error) || 'Submission failed. Please try again.');
                 }
             } catch (error) {
                 // Network or other error
@@ -359,11 +374,13 @@
             let srcs = [];
             let captions = [];
             let currentIndex = 0;
+            let returnFocusElement = null;
 
             function openAt(i){
                 if(!srcs.length) return;
                 currentIndex = ((i % srcs.length) + srcs.length) % srcs.length;
                 lightboxImg.src = srcs[currentIndex];
+                lightboxImg.alt = captions[currentIndex] || 'Campaign image';
                 lightboxCaption.textContent = captions[currentIndex] || '';
                 lightbox.classList.remove('hidden');
                 lightbox.classList.add('flex');
@@ -373,7 +390,12 @@
                 lightbox.classList.add('hidden');
                 lightbox.classList.remove('flex');
                 lightboxImg.src = '';
+                lightboxImg.alt = '';
                 lightboxCaption.textContent = '';
+                if (returnFocusElement && returnFocusElement.isConnected) {
+                    returnFocusElement.focus();
+                }
+                returnFocusElement = null;
             }
 
             btnClose && btnClose.addEventListener('click', close);
@@ -389,13 +411,27 @@
                 if(e.key === 'Escape') close();
                 if(e.key === 'ArrowRight') openAt(currentIndex + 1);
                 if(e.key === 'ArrowLeft') openAt(currentIndex - 1);
+                if(e.key === 'Tab') {
+                    const focusable = Array.from(lightbox.querySelectorAll('button:not(:disabled)'));
+                    const first = focusable[0];
+                    const last = focusable[focusable.length - 1];
+                    if(e.shiftKey && document.activeElement === first) {
+                        e.preventDefault();
+                        last.focus();
+                    } else if(!e.shiftKey && document.activeElement === last) {
+                        e.preventDefault();
+                        first.focus();
+                    }
+                }
             });
 
             // Expose an API to open the lightbox with a custom list of images and captions
             window.openLightbox = function(imagesArray, captionsArray, startIndex){
                 srcs = (imagesArray || []).slice();
                 captions = (captionsArray || []).slice();
+                returnFocusElement = document.activeElement;
                 openAt(startIndex || 0);
+                if (srcs.length) btnClose.focus();
             };
 
             // Wire existing static #gallery images (if present) to the enhanced lightbox
@@ -406,6 +442,8 @@
                 staticGallery.forEach((img, idx) => {
                     img.style.cursor = 'pointer';
                     img.tabIndex = 0;
+                    img.setAttribute('role', 'button');
+                    img.setAttribute('aria-label', `View image: ${staticCaps[idx]}`);
                     img.addEventListener('click', () => window.openLightbox(staticSrcs, staticCaps, idx));
                     img.addEventListener('keydown', (e) => {
                         if(e.key === 'Enter' || e.key === ' ') {
@@ -419,18 +457,16 @@
 
         // Paginated Event Gallery (auto-generate captions from filenames)
         (function(){
-            const start = 23;
-            const end = 63; // inclusive
             const pageSize = 12;
             const thumbsContainer = document.getElementById('event-thumbs');
             const paginationContainer = document.getElementById('event-pagination');
             if(!thumbsContainer || !paginationContainer) return;
 
-            // Build image list
-            const eventImages = [];
-            for(let i = start; i <= end; i++){
-                eventImages.push(`assets/event-${i}.jpg`);
-            }
+            const eventImages = [
+                23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38,
+                39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 53, 54, 57,
+                58, 59, 60, 61, 62, 63
+            ].map(number => `assets/event-${number}.jpg`);
 
             function captionFromFilename(path){
                 const name = path.split('/').pop().replace(/\.[^.]+$/, '');
@@ -455,9 +491,15 @@
                     const cap = eventCaptions[i];
                     const card = document.createElement('div');
                     card.className = 'bg-white rounded-lg overflow-hidden shadow hover:shadow-lg cursor-pointer';
+                    if (revealObserver) {
+                        card.classList.add('reveal-on-scroll');
+                        card.style.setProperty('--reveal-delay', `${((i - startIndex) % 4) * 75}ms`);
+                    }
                     const img = document.createElement('img');
                     img.src = src;
                     img.alt = cap;
+                    img.setAttribute('role', 'button');
+                    img.setAttribute('aria-label', `View image: ${cap}`);
                     img.loading = 'lazy';
                     img.className = 'w-full h-48 object-cover img-cover';
                     img.tabIndex = 0;
@@ -476,6 +518,7 @@
                     captionDiv.textContent = cap;
                     card.appendChild(captionDiv);
                     thumbsContainer.appendChild(card);
+                    if (revealObserver) revealObserver.observe(card);
                 }
 
                 renderPagination();
@@ -486,6 +529,8 @@
 
                 const prev = document.createElement('button');
                 prev.className = 'px-4 py-2 bg-gray-200 rounded disabled:opacity-50';
+                prev.type = 'button';
+                prev.setAttribute('aria-label', 'Previous event gallery page');
                 prev.textContent = 'Prev';
                 prev.disabled = currentPage === 1;
                 prev.addEventListener('click', () => renderPage(currentPage - 1));
@@ -503,13 +548,17 @@
                 for(let p = startBtn; p <= endBtn; p++){
                     const btn = document.createElement('button');
                     btn.className = `px-3 py-2 rounded ${p===currentPage? 'bg-green-700 text-white':'bg-gray-100'}`;
+                    btn.type = 'button';
                     btn.textContent = p;
+                    if (p === currentPage) btn.setAttribute('aria-current', 'page');
                     btn.addEventListener('click', () => renderPage(p));
                     paginationContainer.appendChild(btn);
                 }
 
                 const next = document.createElement('button');
                 next.className = 'px-4 py-2 bg-gray-200 rounded disabled:opacity-50';
+                next.type = 'button';
+                next.setAttribute('aria-label', 'Next event gallery page');
                 next.textContent = 'Next';
                 next.disabled = currentPage === totalPages;
                 next.addEventListener('click', () => renderPage(currentPage + 1));
